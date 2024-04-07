@@ -98,7 +98,7 @@ builder.Services.Configure<HealthCheckPublisherOptions>(options =>
     options.Delay = TimeSpan.FromSeconds(1);
     options.Period = TimeSpan.FromSeconds(10);
 });
-//builder.Services.AddSingleton<IHealthCheckPublisher, SampleHealthCheckPublisher>();
+builder.Services.AddSingleton<IHealthCheckPublisher, SampleHealthCheckPublisher>();
 
 var app = builder.Build();
 
