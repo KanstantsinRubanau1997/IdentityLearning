@@ -1,9 +1,11 @@
 using System.Security.Principal;
 using System.Text;
 using IdentityLearning;
+using IdentityLearning.Authorization;
 using IdentityLearning.HealthChecks;
 using IdentityLearning.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -31,6 +33,8 @@ builder.Services.Configure<IdentityOptions>(options =>
     options.Password.RequireUppercase = false;
     options.Password.RequiredLength = 6;
     options.Password.RequiredUniqueChars = 0;
+
+    options.ClaimsIdentity.UserIdClaimType = AppClaims.UserId;
 });
 
 builder.Services.AddAuthentication()
@@ -86,7 +90,13 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy(Policies.Authorization.Authorized, policy => policy.RequireAuthenticatedUser());
 
     options.AddPolicy(Policies.Authorization.HasNameClaim, policy => policy.RequireClaim(AppClaims.Name));
+
+    options.AddPolicy(
+        Policies.Authorization.HasLetterAInNameAndRole,
+        policy => policy.Requirements.Add(new HasLetterAInNameAndRoleRequirenment()));
 });
+
+builder.Services.AddSingleton<IAuthorizationHandler, HasLetterAInNameAndRoleAuthorizationHandler>();
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddMvc();

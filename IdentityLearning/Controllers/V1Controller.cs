@@ -3,16 +3,23 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
-namespace IdentityLearning
+namespace IdentityLearning.Controllers
 {
     [Route("v1")]
     public class V1Controller : Controller
     {
         private readonly SignInManager<User> _signInManager;
+        private readonly UserManager<User> _userManager;
+        private readonly IAuthorizationService _authorizationService;
 
-        public V1Controller(SignInManager<User> signInManager)
+        public V1Controller(
+            SignInManager<User> signInManager,
+            IAuthorizationService authorizationService,
+            UserManager<User> userManager)
         {
             _signInManager = signInManager;
+            _authorizationService = authorizationService;
+            _userManager = userManager;
         }
 
 
@@ -41,7 +48,7 @@ namespace IdentityLearning
         public async Task<IActionResult> LogOut()
         {
             await _signInManager.SignOutAsync();
-             
+
             return RedirectToAction(nameof(PublicPage));
         }
 
@@ -82,6 +89,26 @@ namespace IdentityLearning
         public async Task<IActionResult> PublicPage()
         {
             return Ok("Public page");
+        }
+
+        [Authorize(
+            Policy = Policies.Authorization.Authorized,
+            AuthenticationSchemes = Policies.Authentification.V1)]
+        [HttpGet("resource-based-page")]
+        public async Task<IActionResult> ResourceBaseAuthorizedPage()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            var authorizationResult = await _authorizationService.AuthorizeAsync(
+                User,
+                user,
+                Policies.Authorization.HasLetterAInNameAndRole);
+
+            if (!authorizationResult.Succeeded)
+            {
+                return RedirectToAction(nameof(LogIn));
+            }
+
+            return Ok("Resource based page");
         }
     }
 }

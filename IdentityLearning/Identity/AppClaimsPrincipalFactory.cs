@@ -18,6 +18,7 @@ namespace IdentityLearning.Identity
             {
                 new Claim(AppClaims.Name, user.Name),
                 new Claim(ClaimTypes.Role, user.Role.Name),
+                new Claim(AppClaims.UserId, user.Id)
             };
             var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
 

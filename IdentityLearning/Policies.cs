@@ -16,6 +16,8 @@
             public const string Authorized = "Authorized";
 
             public const string HasNameClaim = "HasNameClaim";
+
+            public const string HasLetterAInNameAndRole = "HasLetterAInNameAndRole";
         }
     }
 }
