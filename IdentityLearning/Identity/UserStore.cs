@@ -51,16 +51,12 @@ namespace IdentityLearning.Identity
 
         public async Task<string> GetUserIdAsync(User user, CancellationToken cancellationToken)
         {
-            var baseUser = await _context.Users.SingleOrDefaultAsync(u => u.Name == user.Name, cancellationToken);
-
-            return baseUser?.Id;
+            return user.Id;
         }
 
         public async Task<string?> GetUserNameAsync(User user, CancellationToken cancellationToken)
         {
-            var baseUser = await _context.Users.SingleOrDefaultAsync(u => u.Id == user.Id, cancellationToken);
-
-            return baseUser?.Name;
+            return user.Name;
         }
 
         public async Task SetNormalizedUserNameAsync(User user, string? normalizedName, CancellationToken cancellationToken)
