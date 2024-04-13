@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using IdentityLearning.Identity;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,13 +8,11 @@ namespace IdentityLearning
     [Route("v1")]
     public class V1Controller : Controller
     {
-        private readonly SignInManager<IdentityUser> _signInManager;
-        private readonly UserManager<IdentityUser> _userManager;
+        private readonly SignInManager<User> _signInManager;
 
-        public V1Controller(SignInManager<IdentityUser> signInManager, UserManager<IdentityUser> userManager)
+        public V1Controller(SignInManager<User> signInManager)
         {
             _signInManager = signInManager;
-            _userManager = userManager;
         }
 
 
@@ -42,7 +41,7 @@ namespace IdentityLearning
         public async Task<IActionResult> LogOut()
         {
             await _signInManager.SignOutAsync();
-
+             
             return RedirectToAction(nameof(PublicPage));
         }
 

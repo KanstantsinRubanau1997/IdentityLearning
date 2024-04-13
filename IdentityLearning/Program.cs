@@ -1,23 +1,44 @@
+using System.Security.Principal;
 using System.Text;
 using IdentityLearning;
 using IdentityLearning.HealthChecks;
+using IdentityLearning.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<ApplicationDbContext>(
-    options => options.UseInMemoryDatabase("ApplicationDb"));
-builder.Services.AddIdentity<IdentityUser, IdentityRole>()
-    .AddEntityFrameworkStores<ApplicationDbContext>()
+    options => options.UseInMemoryDatabase("ApplicationDb"),
+    ServiceLifetime.Singleton);
+builder.Services.AddIdentityCore<User>()
     .AddClaimsPrincipalFactory<AppClaimsPrincipalFactory>();
+builder.Services.AddScoped<IUserStore<User>, UserStore>();
+builder.Services.AddScoped<IUserPasswordStore<User>, UserStore>();
+builder.Services.AddScoped<SignInManager<User>>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+
+builder.Services.Configure<IdentityOptions>(options =>
+{
+    options.Password.RequireDigit = false;
+    options.Password.RequireLowercase = false;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequireUppercase = false;
+    options.Password.RequiredLength = 6;
+    options.Password.RequiredUniqueChars = 0;
+});
 
 builder.Services.AddAuthentication()
+    .AddCookie(IdentityConstants.ApplicationScheme, options =>
+    {
+        options.ForwardSignIn = Policies.Authentification.V1;
+        options.ForwardSignOut = Policies.Authentification.V1;
+    })
     .AddCookie(Policies.Authentification.V1, options =>
     {
         options.LoginPath = new PathString("/v1/log-in");
@@ -67,25 +88,10 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy(Policies.Authorization.HasNameClaim, policy => policy.RequireClaim(AppClaims.Name));
 });
 
-builder.Services.ConfigureApplicationCookie(options =>
-{
-    options.ForwardDefaultSelector = (context) => Policies.Authentification.V1;
-});
-
 builder.Services.AddControllersWithViews();
 builder.Services.AddMvc();
 
 builder.Services.AddSwaggerGen();
-
-builder.Services.Configure<IdentityOptions>(options =>
-{
-    options.Password.RequireDigit = false;
-    options.Password.RequireLowercase = false;
-    options.Password.RequireNonAlphanumeric = false;
-    options.Password.RequireUppercase = false;
-    options.Password.RequiredLength = 6;
-    options.Password.RequiredUniqueChars = 0;
-});
 
 builder.Services.AddHealthChecks()
     .AddCheck<SampleHealthCheck>("Sample")
@@ -96,7 +102,7 @@ builder.Services.AddHealthChecks()
 builder.Services.Configure<HealthCheckPublisherOptions>(options =>
 {
     options.Delay = TimeSpan.FromSeconds(1);
-    options.Period = TimeSpan.FromSeconds(10);
+    options.Period = TimeSpan.FromSeconds(30);
 });
 builder.Services.AddSingleton<IHealthCheckPublisher, SampleHealthCheckPublisher>();
 
