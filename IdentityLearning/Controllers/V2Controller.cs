@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authentication;
+﻿using IdentityLearning.Identity;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -9,6 +10,13 @@ namespace IdentityLearning.Controllers
     [Route("v2")]
     public class V2Controller : Controller
     {
+        private readonly IAuthorizationService _authorizationService;
+
+        public V2Controller(IAuthorizationService authorizationService)
+        {
+            _authorizationService = authorizationService;
+        }
+
         [AllowAnonymous]
         [HttpGet("log-in")]
         public async Task<IActionResult> LogIn()
@@ -80,6 +88,30 @@ namespace IdentityLearning.Controllers
         public async Task<IActionResult> PublicPage()
         {
             return Ok("Public page");
+        }
+
+        [Authorize(
+            Policy = Policies.Authorization.Authorized,
+            AuthenticationSchemes = Policies.Authentification.V2)]
+        [HttpGet("resource-based-page")]
+        public async Task<IActionResult> ResourceBaseAuthorizedPage()
+        {
+            var user = new User
+            {
+                Name = "a",
+                Role = new Role { Name = "a" }
+            };
+            var authorizationResult = await _authorizationService.AuthorizeAsync(
+                User,
+                user,
+                Policies.Authorization.HasLetterAInNameAndRole);
+
+            if (!authorizationResult.Succeeded)
+            {
+                return RedirectToAction(nameof(LogIn));
+            }
+
+            return Ok("Resource based page");
         }
     }
 }
