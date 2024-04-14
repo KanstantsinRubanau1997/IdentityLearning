@@ -4,6 +4,7 @@ using IdentityLearning;
 using IdentityLearning.Authorization;
 using IdentityLearning.HealthChecks;
 using IdentityLearning.Identity;
+using IdentityLearning.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
@@ -101,6 +102,9 @@ builder.Services.AddAuthorization(options =>
 
 builder.Services.AddSingleton<IAuthorizationHandler, HasLetterAInNameAndRoleAuthorizationHandler>();
 
+builder.Services.AddScoped<ScopedService>();
+builder.Services.AddTransient<FactoryActivatedMiddleware>();
+
 builder.Services.AddControllersWithViews();
 builder.Services.AddMvc();
 
@@ -131,6 +135,9 @@ app.UseCookiePolicy(new CookiePolicyOptions { MinimumSameSitePolicy = SameSiteMo
 
 app.UseStaticFiles();
 
+app.UseMiddleware<StandartMiddleware>();
+app.UseMiddleware<FactoryActivatedMiddleware>();
+
 app.UseRouting();
 
 app.UseAuthentication();
@@ -159,17 +166,17 @@ app.MapHealthChecks("/healthz/Degraded", new HealthCheckOptions
 app.MapHealthChecks("/healthz", new HealthCheckOptions
 {
     Predicate = healthCheck => healthCheck.Name == "Sample"
-});
+}).AllowAnonymous();
 
 app.MapHealthChecks("/healthz/Unhealthy", new HealthCheckOptions
 {
     Predicate = healthCheck => healthCheck.Name == "Unhealthy"
-});
+}).AllowAnonymous();
 
 app.MapHealthChecks("/healthz/Database", new HealthCheckOptions
 {
     Predicate = healthCheck => healthCheck.Name == "Database"
-});
+}).AllowAnonymous();
 
 app.MapControllers();
 
