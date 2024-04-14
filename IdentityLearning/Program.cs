@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -37,7 +38,7 @@ builder.Services.Configure<IdentityOptions>(options =>
     options.ClaimsIdentity.UserIdClaimType = AppClaims.UserId;
 });
 
-builder.Services.AddAuthentication()
+builder.Services.AddAuthentication(Policies.Authentification.V1)
     .AddCookie(IdentityConstants.ApplicationScheme, options =>
     {
         options.ForwardSignIn = Policies.Authentification.V1;
@@ -94,6 +95,8 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy(
         Policies.Authorization.HasLetterAInNameAndRole,
         policy => policy.Requirements.Add(new HasLetterAInNameAndRoleRequirenment()));
+
+    options.FallbackPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();
 });
 
 builder.Services.AddSingleton<IAuthorizationHandler, HasLetterAInNameAndRoleAuthorizationHandler>();
@@ -116,6 +119,8 @@ builder.Services.Configure<HealthCheckPublisherOptions>(options =>
 });
 builder.Services.AddSingleton<IHealthCheckPublisher, SampleHealthCheckPublisher>();
 
+builder.Services.AddDirectoryBrowser();
+
 var app = builder.Build();
 
 app.UseSwagger();
@@ -124,10 +129,27 @@ app.MapSwagger();
 
 app.UseCookiePolicy(new CookiePolicyOptions { MinimumSameSitePolicy = SameSiteMode.Strict });
 
+app.UseStaticFiles();
+
 app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+var provider = new PhysicalFileProvider(Path.Combine(builder.Environment.ContentRootPath, "MyStaticFiles"));
+var requestPath = "/StaticFiles";
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = provider,
+    RequestPath = requestPath
+});
+
+app.UseDirectoryBrowser(new DirectoryBrowserOptions
+{
+    FileProvider = provider,
+    RequestPath = requestPath
+});
 
 app.MapHealthChecks("/healthz/Degraded", new HealthCheckOptions
 {
