@@ -2,6 +2,7 @@ using System.Security.Principal;
 using System.Text;
 using IdentityLearning;
 using IdentityLearning.Authorization;
+using IdentityLearning.Cookie;
 using IdentityLearning.HealthChecks;
 using IdentityLearning.Identity;
 using IdentityLearning.Middleware;
@@ -54,6 +55,7 @@ builder.Services.AddAuthentication(Policies.Authentification.V1)
      {
          options.LoginPath = new PathString("/v2/log-in");
          options.AccessDeniedPath = new PathString("/v2/log-in");
+         options.DataProtectionProvider = new MyDataProtector();
      })
     .AddJwtBearer(Policies.Authentification.V3, options =>
     {
@@ -93,6 +95,9 @@ builder.Services.AddAuthorization(options =>
 
     options.AddPolicy(Policies.Authorization.HasNameClaim, policy => policy.RequireClaim(AppClaims.Name));
 
+    options.AddPolicy(Policies.Authorization.AtLeast21, policy =>
+        policy.Requirements.Add(new MinimumAgeRequirement(21)));
+
     options.AddPolicy(
         Policies.Authorization.HasLetterAInNameAndRole,
         policy => policy.Requirements.Add(new HasLetterAInNameAndRoleRequirenment()));
@@ -101,6 +106,7 @@ builder.Services.AddAuthorization(options =>
 });
 
 builder.Services.AddSingleton<IAuthorizationHandler, HasLetterAInNameAndRoleAuthorizationHandler>();
+builder.Services.AddSingleton<IAuthorizationHandler, MinimumAgeHandler>();
 
 builder.Services.AddScoped<ScopedService>();
 builder.Services.AddTransient<FactoryActivatedMiddleware>();

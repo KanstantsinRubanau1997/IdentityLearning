@@ -2,8 +2,14 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Owin.Security.Cookies;
+using System.Net;
 using System.Security.Claims;
+using System.Text;
+using static System.Net.WebRequestMethods;
 
 namespace IdentityLearning.Controllers
 {
@@ -37,8 +43,11 @@ namespace IdentityLearning.Controllers
             {
                 new Claim(AppClaims.Name, login),
                 new Claim(ClaimTypes.Role, "Admin"),
+                new Claim(ClaimTypes.DateOfBirth, "04-11-1997")
             };
-            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var claimsIdentity = new ClaimsIdentity(
+                claims,
+                Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme);
             var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
 
             await HttpContext.SignInAsync(Policies.Authentification.V2, claimsPrincipal);
@@ -83,6 +92,13 @@ namespace IdentityLearning.Controllers
             return Ok("Claims protected page");
         }
 
+        [Authorize(Policy = Policies.Authorization.AtLeast21, AuthenticationSchemes = Policies.Authentification.V2)]
+        [HttpGet("old-people-only-page")]
+        public async Task<IActionResult> OldPeopleOnlyPage()
+        {
+            return Ok("Old people only page");
+        }
+
         [AllowAnonymous]
         [HttpGet("public-page")]
         public async Task<IActionResult> PublicPage()
@@ -112,6 +128,27 @@ namespace IdentityLearning.Controllers
             }
 
             return Ok("Resource based page");
+        }
+
+        [Authorize(
+            Policy = Policies.Authorization.Authorized,
+            AuthenticationSchemes = Policies.Authentification.V2)]
+        [HttpGet("decrypt-cookie")]
+        public IActionResult DecryptCookie()
+        {
+            var cookie = HttpContext.Request.Cookies[".AspNetCore.V2"];
+
+            var data = Convert.FromBase64String(cookie);
+            var decodedString = Encoding.UTF8.GetString(data);
+            //*
+            //V2
+            //Cookies
+            //Name qwe
+            //<http://schemas.microsoft.com/ws/2008/06/identity/claims/role Admin
+            //.issuedTue, 16 Apr 2024 20:31:16 GMT
+            //.expiresTue, 30 Apr 2024 20:31:16 GMT
+            //*
+            return Ok(decodedString);
         }
     }
 }

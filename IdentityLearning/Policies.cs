@@ -18,6 +18,8 @@
             public const string HasNameClaim = "HasNameClaim";
 
             public const string HasLetterAInNameAndRole = "HasLetterAInNameAndRole";
+
+            public const string AtLeast21 = "AtLeast21";
         }
     }
 }

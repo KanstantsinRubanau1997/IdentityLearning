@@ -1,7 +1,9 @@
 ﻿using IdentityLearning.Identity;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using System.Text;
 
 namespace IdentityLearning.Controllers
 {
